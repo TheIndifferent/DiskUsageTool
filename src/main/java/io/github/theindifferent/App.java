@@ -21,6 +21,5 @@ public class App {
                 new MainWindow(folderChooser.getSelectedFile().toPath()).setVisible(true);
             }
         });
-//        new DiskScanner(Path.of("C:", "3D")).scan();
     }
 }

@@ -44,7 +44,7 @@ class MainPanel extends JPanel {
             }
 
             @Override
-            protected DiskUsageDirectory doInBackground() throws Exception {
+            protected DiskUsageDirectory doInBackground() {
                 return new DiskScanner(path, this::publish)
                         .scan();
             }
@@ -58,19 +58,23 @@ class MainPanel extends JPanel {
         list.setCellRenderer(new DiskUsageItemCellRenderer(model));
         list.getInputMap().put(KeyStroke.getKeyStroke("ENTER"), "enterDirectory");
         list.getInputMap().put(KeyStroke.getKeyStroke("BACK_SPACE"), "goUp");
+        list.getInputMap().put(KeyStroke.getKeyStroke('r'), "refreshCurrent");
         list.getActionMap().put("enterDirectory", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                var selectedIndex = list.getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    model.goToIndex(selectedIndex);
-                }
+                model.goToIndex(list.getSelectedIndex());
             }
         });
         list.getActionMap().put("goUp", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 model.goToParent();
+            }
+        });
+        list.getActionMap().put("refreshCurrent", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                refreshCurrent(model);
             }
         });
 
@@ -82,4 +86,36 @@ class MainPanel extends JPanel {
         list.requestFocusInWindow();
     }
 
+    void refreshCurrent(DiskUsageListModel listModel) {
+        var progressPanel = new ProgressPanel();
+        var window = new JWindow((Frame) null);
+        window.setContentPane(progressPanel);
+        window.setSize(getWidth(), 100);
+        window.setLocationRelativeTo(MainPanel.this);
+        window.setVisible(true);
+        var currentDir = listModel.currentDir();
+
+        new SwingWorker<DiskUsageDirectory, String>() {
+            @Override
+            protected void process(List<String> chunks) {
+                var fullPath = chunks.get(chunks.size() - 1);
+                progressPanel.updateProgress(fullPath);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    window.dispose();
+                    listModel.refreshCurrent(get());
+                } catch (Exception ignore) {
+                }
+            }
+
+            @Override
+            protected DiskUsageDirectory doInBackground() {
+                return new DiskScanner(currentDir.path(), this::publish)
+                        .scan();
+            }
+        }.execute();
+    }
 }

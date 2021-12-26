@@ -38,6 +38,9 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
     }
 
     void goToIndex(int index) {
+        if (index < 0) {
+            return;
+        }
         if (index == 0 && hasParent()) {
             goToParent();
             return;
@@ -63,6 +66,15 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
             fireIntervalRemoved(this, 0, removedLength);
             fireIntervalAdded(this, 0, addedLength);
         }
+    }
+
+    void refreshCurrent(DiskUsageDirectory dir) {
+        var removeLength = current.files.size() + (hasParent() ? 1 : 0);
+        var addedLength = dir.files.size() + + (hasParent() ? 1 : 0);
+        current.files.clear();
+        current.files.addAll(dir.files);
+        fireIntervalRemoved(this, 0, removeLength);
+        fireIntervalAdded(this, 0, addedLength);
     }
 
     @Override
