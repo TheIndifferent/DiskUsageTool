@@ -83,7 +83,7 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
         // draw visual size comparison:
         var gradient = new LinearGradientPaint(xOfBar, clip.y + 1, clip.width - 6, clip.height - 2, gradientPoints, gradientColors);
         g2.setPaint(gradient);
-        var relationBetweenLargestAndCurrentItem = listModel.largestFile() / currentItem.size();
+        var relationBetweenLargestAndCurrentItem = listModel.largestFile() / (double) currentItem.size();
         var maxGradientWidth = clip.width - xOfBar - 6;
         var currentGradientWidth = maxGradientWidth / relationBetweenLargestAndCurrentItem;
         if (currentGradientWidth < 2) {
