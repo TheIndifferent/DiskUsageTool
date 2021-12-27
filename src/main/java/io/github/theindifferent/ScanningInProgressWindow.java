@@ -1,9 +1,15 @@
 package io.github.theindifferent;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JWindow;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 class ScanningInProgressWindow extends JWindow {
 
@@ -17,9 +23,12 @@ class ScanningInProgressWindow extends JWindow {
         setContentPane(panel);
     }
 
-    public void progress(String path) {
+    public void progress(List<Path> paths) {
+        var appending = paths.stream()
+                .map(Path::toString)
+                .collect(Collectors.joining("\n", "", "\n"));
         try {
-            document.insertString(document.getLength(), '\n' + path, null);
+            document.insertString(document.getLength(), appending, null);
         } catch (BadLocationException e) {
             e.printStackTrace();
         }

@@ -1,6 +1,6 @@
 package io.github.theindifferent;
 
-import javax.swing.*;
+import javax.swing.AbstractListModel;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 

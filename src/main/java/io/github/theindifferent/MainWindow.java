@@ -1,6 +1,6 @@
 package io.github.theindifferent;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 import java.nio.file.Path;
 
 class MainWindow extends JFrame {

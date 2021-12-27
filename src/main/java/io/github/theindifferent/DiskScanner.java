@@ -13,9 +13,9 @@ import java.util.function.Consumer;
 public class DiskScanner {
 
     private final Path scanPath;
-    private final Consumer<String> currentScanningDir;
+    private final Consumer<Path> currentScanningDir;
 
-    public DiskScanner(Path scanPath, Consumer<String> currentScanningDir) {
+    public DiskScanner(Path scanPath, Consumer<Path> currentScanningDir) {
         this.scanPath = scanPath;
         this.currentScanningDir = currentScanningDir;
     }
@@ -36,16 +36,16 @@ public class DiskScanner {
 
     private static class VisitorImpl implements FileVisitor<Path> {
 
-        private final Consumer<String> currentScanningDir;
+        private final Consumer<Path> currentScanningDir;
         private DiskUsageDirectory dir;
 
-        private VisitorImpl(Consumer<String> currentScanningDir) {
+        private VisitorImpl(Consumer<Path> currentScanningDir) {
             this.currentScanningDir = currentScanningDir;
         }
 
         @Override
         public FileVisitResult preVisitDirectory(Path dirPath, BasicFileAttributes attrs) {
-            currentScanningDir.accept(dirPath.toString());
+            currentScanningDir.accept(dirPath);
             dir = new DiskUsageDirectory(dirPath, Optional.ofNullable(dir));
             return FileVisitResult.CONTINUE;
         }
