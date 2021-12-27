@@ -18,7 +18,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.nio.file.Path;
-import java.util.Optional;
 
 class MainPanel extends JPanel {
 
@@ -26,7 +25,7 @@ class MainPanel extends JPanel {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        var model = new DiskUsageListModel(new DiskUsageDirectory(path, Optional.empty()));
+        var model = new DiskUsageListModel(new DiskUsageDirectory(path, null));
         var list = createList(model);
         var scrollPane = new JScrollPane(list);
         add(scrollPane, BorderLayout.CENTER);

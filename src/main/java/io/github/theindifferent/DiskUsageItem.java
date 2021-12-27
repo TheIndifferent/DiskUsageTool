@@ -1,7 +1,6 @@
 package io.github.theindifferent;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 public interface DiskUsageItem extends Comparable<DiskUsageItem> {
 
@@ -9,7 +8,7 @@ public interface DiskUsageItem extends Comparable<DiskUsageItem> {
 
     Path path();
 
-    Optional<DiskUsageDirectory> parent();
+    DiskUsageDirectory parent();
 
     long size();
 

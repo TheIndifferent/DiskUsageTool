@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class DiskScanner {
@@ -46,13 +45,13 @@ public class DiskScanner {
         @Override
         public FileVisitResult preVisitDirectory(Path dirPath, BasicFileAttributes attrs) {
             currentScanningDir.accept(dirPath);
-            dir = new DiskUsageDirectory(dirPath, Optional.ofNullable(dir));
+            dir = new DiskUsageDirectory(dirPath, dir);
             return FileVisitResult.CONTINUE;
         }
 
         @Override
         public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
-            var file = new DiskUsageFile(filePath, Optional.of(dir));
+            var file = new DiskUsageFile(filePath, dir);
             dir.files.add(file);
             return FileVisitResult.CONTINUE;
         }
@@ -66,9 +65,10 @@ public class DiskScanner {
         @Override
         public FileVisitResult postVisitDirectory(Path dirPath, IOException exc) {
             Collections.sort(dir.files);
-            var parent = dir.parent();
-            parent.ifPresent(p -> p.files.add(dir));
-            dir = parent.orElse(dir);
+            if (dir.parent() != null) {
+                dir.parent().files.add(dir);
+                dir = dir.parent();
+            }
             return FileVisitResult.CONTINUE;
         }
     }

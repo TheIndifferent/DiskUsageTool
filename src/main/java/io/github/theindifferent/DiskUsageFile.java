@@ -3,34 +3,32 @@ package io.github.theindifferent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.OptionalLong;
 
 public class DiskUsageFile implements DiskUsageItem {
 
     private final Path path;
-    private final Optional<DiskUsageDirectory> parent;
+    private final DiskUsageDirectory parent;
 
     private final String name;
     private final long size;
 
-    private boolean error;
+    private final boolean error;
 
-    public DiskUsageFile(Path path, Optional<DiskUsageDirectory> parent) {
+    public DiskUsageFile(Path path, DiskUsageDirectory parent) {
         this.path = path;
         this.parent = parent;
         this.name = path.getFileName().toString();
         var fileSize = fileSizeOrEmptyOnError(path);
 
-        this.size = fileSize.orElse(0);
-        this.error = fileSize.isEmpty();
+        this.size = fileSize < 0 ? 0 : fileSize;
+        this.error = fileSize < 0;
     }
 
-    private OptionalLong fileSizeOrEmptyOnError(Path path) {
+    private long fileSizeOrEmptyOnError(Path path) {
         try {
-            return OptionalLong.of(Files.size(path));
+            return Files.size(path);
         } catch (IOException ioex) {
-            return OptionalLong.empty();
+            return -1;
         }
     }
 
@@ -45,7 +43,7 @@ public class DiskUsageFile implements DiskUsageItem {
     }
 
     @Override
-    public Optional<DiskUsageDirectory> parent() {
+    public DiskUsageDirectory parent() {
         return parent;
     }
 

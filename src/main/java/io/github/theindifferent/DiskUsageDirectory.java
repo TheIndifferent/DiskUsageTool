@@ -3,19 +3,18 @@ package io.github.theindifferent;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class DiskUsageDirectory implements DiskUsageItem {
 
     private final Path path;
-    private final Optional<DiskUsageDirectory> parent;
+    private final DiskUsageDirectory parent;
 
     private final String name;
 
     boolean error;
     List<DiskUsageItem> files = new ArrayList<>();
 
-    public DiskUsageDirectory(Path path, Optional<DiskUsageDirectory> parent) {
+    public DiskUsageDirectory(Path path, DiskUsageDirectory parent) {
         this.path = path;
         this.parent = parent;
 
@@ -38,7 +37,7 @@ public class DiskUsageDirectory implements DiskUsageItem {
     }
 
     @Override
-    public Optional<DiskUsageDirectory> parent() {
+    public DiskUsageDirectory parent() {
         return parent;
     }
 

@@ -34,7 +34,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
     }
 
     boolean hasParent() {
-        return current.parent().isPresent();
+        return current.parent() != null;
     }
 
     void goToIndex(int index) {
@@ -59,9 +59,9 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
     }
 
     void goToParent() {
-        if (current.parent().isPresent()) {
+        if (current.parent() != null) {
             var removedLength = current.files.size() + 1;
-            current = current.parent().get();
+            current = current.parent();
             var addedLength = current.files.size() + (hasParent() ? 1 : 0);
             fireIntervalRemoved(this, 0, removedLength);
             fireIntervalAdded(this, 0, addedLength);
@@ -93,7 +93,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
     public DiskUsageItem getElementAt(int index) {
         if (hasParent()) {
             if (index == 0) {
-                return current.parent().get();
+                return current.parent();
             }
             return current.files.get(index - 1);
         }
