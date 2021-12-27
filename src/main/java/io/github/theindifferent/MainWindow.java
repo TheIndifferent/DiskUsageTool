@@ -7,7 +7,7 @@ class MainWindow extends JFrame {
 
     MainWindow(Path path) {
         super("Disk Usage Tool");
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setContentPane(new MainPanel(path));
         setSize(800, 600);
         setLocationRelativeTo(null);

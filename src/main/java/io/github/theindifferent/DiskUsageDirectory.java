@@ -19,7 +19,12 @@ public class DiskUsageDirectory implements DiskUsageItem {
         this.path = path;
         this.parent = parent;
 
-        this.name = path.getFileName().toString();
+        var fileName = path.getFileName();
+        if (fileName == null) {
+            this.name = path.toString();
+        } else {
+            this.name = fileName.toString();
+        }
     }
 
     @Override
