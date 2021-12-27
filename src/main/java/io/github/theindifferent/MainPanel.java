@@ -1,15 +1,22 @@
 package io.github.theindifferent;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 import java.awt.BorderLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -36,6 +43,8 @@ class MainPanel extends JPanel {
         list.getInputMap().put(KeyStroke.getKeyStroke("ENTER"), "enterDirectory");
         list.getInputMap().put(KeyStroke.getKeyStroke("BACK_SPACE"), "goUp");
         list.getInputMap().put(KeyStroke.getKeyStroke('r'), "refreshCurrent");
+        list.getInputMap().put(KeyStroke.getKeyStroke("COPY"), TransferHandler.getCopyAction().getValue(Action.NAME));
+        list.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), TransferHandler.getCopyAction().getValue(Action.NAME));
         list.getActionMap().put("enterDirectory", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -52,6 +61,18 @@ class MainPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 refreshCurrent(model, list);
+            }
+        });
+        list.getActionMap().put(TransferHandler.getCopyAction().getValue(Action.NAME), TransferHandler.getCopyAction());
+        list.setTransferHandler(new TransferHandler() {
+            @Override
+            protected Transferable createTransferable(JComponent c) {
+                return new StringSelection(model.currentDir().path().toString());
+            }
+
+            @Override
+            public int getSourceActions(JComponent c) {
+                return TransferHandler.COPY;
             }
         });
         return list;
