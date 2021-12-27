@@ -3,7 +3,6 @@ package io.github.theindifferent;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 class MainPanel extends JPanel {
@@ -43,7 +42,7 @@ class MainPanel extends JPanel {
         list.getActionMap().put("refreshCurrent", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                refreshCurrent(model);
+                refreshCurrent(model, list);
             }
         });
 
@@ -55,19 +54,17 @@ class MainPanel extends JPanel {
         list.requestFocusInWindow();
     }
 
-    void refreshCurrent(DiskUsageListModel listModel) {
-        var progressPanel = new ProgressPanel();
-        var window = new JWindow((Frame) null);
-        window.setContentPane(progressPanel);
-        window.setSize(getWidth(), 100);
-        window.setLocationRelativeTo(MainPanel.this);
-        window.setVisible(true);
+    void refreshCurrent(DiskUsageListModel listModel, JList<?> list) {
+        var progressWindow = new ScanningInProgressWindow();
+        progressWindow.setSize(list.getSize());
+        progressWindow.setLocation(list.getLocationOnScreen());
+        progressWindow.setVisible(true);
         var currentDir = listModel.currentDir();
         new DiskScanningSwingWorker(
                 currentDir.path(),
-                progressPanel::updateProgress,
+                progressWindow::progress,
                 dir -> {
-                    window.dispose();
+                    progressWindow.dispose();
                     listModel.refreshCurrent(dir);
                 })
                 .execute();
