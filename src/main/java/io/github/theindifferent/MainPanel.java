@@ -28,27 +28,11 @@ class MainPanel extends JPanel {
             return;
         }
 
-        new SwingWorker<DiskUsageDirectory, String>() {
-            @Override
-            protected void process(List<String> chunks) {
-                var fullPath = chunks.get(chunks.size() - 1);
-                label.setText("Scanning: " + fullPath);
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    scanningDone(get());
-                } catch (Exception ignore) {
-                }
-            }
-
-            @Override
-            protected DiskUsageDirectory doInBackground() {
-                return new DiskScanner(path, this::publish)
-                        .scan();
-            }
-        }.execute();
+        new DiskScanningSwingWorker(
+                path,
+                progress -> label.setText("Scanning: " + progress),
+                this::scanningDone)
+                .execute();
     }
 
     private void scanningDone(DiskUsageDirectory rootItem) {
@@ -94,28 +78,13 @@ class MainPanel extends JPanel {
         window.setLocationRelativeTo(MainPanel.this);
         window.setVisible(true);
         var currentDir = listModel.currentDir();
-
-        new SwingWorker<DiskUsageDirectory, String>() {
-            @Override
-            protected void process(List<String> chunks) {
-                var fullPath = chunks.get(chunks.size() - 1);
-                progressPanel.updateProgress(fullPath);
-            }
-
-            @Override
-            protected void done() {
-                try {
+        new DiskScanningSwingWorker(
+                currentDir.path(),
+                progressPanel::updateProgress,
+                dir -> {
                     window.dispose();
-                    listModel.refreshCurrent(get());
-                } catch (Exception ignore) {
-                }
-            }
-
-            @Override
-            protected DiskUsageDirectory doInBackground() {
-                return new DiskScanner(currentDir.path(), this::publish)
-                        .scan();
-            }
-        }.execute();
+                    listModel.refreshCurrent(dir);
+                })
+                .execute();
     }
 }
