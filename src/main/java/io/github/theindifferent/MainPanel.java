@@ -4,23 +4,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.nio.file.Path;
+import java.util.Optional;
 
 class MainPanel extends JPanel {
 
     MainPanel(Path path) {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        var label = new JLabel("Scanning: ");
-        add(label, BorderLayout.CENTER);
-        new DiskScanningSwingWorker(
-                path,
-                progress -> label.setText("Scanning: " + progress),
-                this::scanningDone)
-                .execute();
+
+        var model = new DiskUsageListModel(new DiskUsageDirectory(path, Optional.empty()));
+        var list = createList(model);
+        var scrollPane = new JScrollPane(list);
+        add(scrollPane, BorderLayout.CENTER);
+        updateUI();
+        list.requestFocusInWindow();
+
+        SwingUtilities.invokeLater(() -> refreshCurrent(model, list));
     }
 
-    private void scanningDone(DiskUsageDirectory rootItem) {
-        var model = new DiskUsageListModel(rootItem);
+    private JList<DiskUsageItem> createList(DiskUsageListModel model) {
         var list = new JList<>(model);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setCellRenderer(new DiskUsageItemCellRenderer(model));
@@ -45,13 +47,7 @@ class MainPanel extends JPanel {
                 refreshCurrent(model, list);
             }
         });
-
-        var scrollPane = new JScrollPane(list);
-
-        removeAll();
-        add(scrollPane, BorderLayout.CENTER);
-        updateUI();
-        list.requestFocusInWindow();
+        return list;
     }
 
     void refreshCurrent(DiskUsageListModel listModel, JList<?> list) {
