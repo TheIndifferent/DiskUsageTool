@@ -2,7 +2,9 @@ package io.github.theindifferent;
 
 import javax.swing.*;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class App implements Runnable {
@@ -18,7 +20,7 @@ public class App implements Runnable {
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
-        chooseDirectoryToScan(path -> new MainWindow(path).setVisible(true));
+        chooseDirectoryToScan(this::checkPathAndShowMainWindow);
     }
 
     private void chooseDirectoryToScan(Consumer<Path> dirConsumer) {
@@ -30,5 +32,29 @@ public class App implements Runnable {
         if (folderChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
             dirConsumer.accept(folderChooser.getSelectedFile().toPath());
         }
+    }
+
+    private void checkPathAndShowMainWindow(Path path) {
+        var error = checkPath(path);
+        error.ifPresentOrElse(
+                this::showErrorMessage,
+                () -> new MainWindow(path).setVisible(true));
+    }
+
+    private Optional<String> checkPath(Path path) {
+        if (!Files.exists(path)) {
+            return Optional.of("Path does not exist:\n" + path);
+        }
+        if (!Files.isDirectory(path)) {
+            return Optional.of("Path is not a directory:\n" + path);
+        }
+        if (!Files.isReadable(path)) {
+            return Optional.of("Path is not readable:\n" + path);
+        }
+        return Optional.empty();
+    }
+
+    private void showErrorMessage(String error) {
+        JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

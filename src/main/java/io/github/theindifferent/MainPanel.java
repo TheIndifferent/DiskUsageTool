@@ -13,20 +13,6 @@ class MainPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         var label = new JLabel("Scanning: ");
         add(label, BorderLayout.CENTER);
-
-        if (!Files.exists(path)) {
-            label.setText("Path does not exist: " + path);
-            return;
-        }
-        if (!Files.isDirectory(path)) {
-            label.setText("Path is not a directory: " + path);
-            return;
-        }
-        if (!Files.isReadable(path)) {
-            label.setText("Path is not readable: " + path);
-            return;
-        }
-
         new DiskScanningSwingWorker(
                 path,
                 progress -> label.setText("Scanning: " + progress),
