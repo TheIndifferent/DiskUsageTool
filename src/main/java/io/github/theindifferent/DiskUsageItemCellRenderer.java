@@ -8,7 +8,6 @@ import java.util.Map;
 
 public class DiskUsageItemCellRenderer extends JComponent implements ListCellRenderer<DiskUsageItem> {
 
-    private final Color errorBackgroundColor = new Color(255, 208, 208);
     private final DecimalFormat decimalFormat = new DecimalFormat("0.0");
     private final float[] gradientPoints = new float[]{0f, 0.5f, 1f};
     private final Color[] gradientColors = new Color[]{Color.GREEN, Color.YELLOW, Color.RED};
@@ -33,11 +32,7 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
         var clip = g2.getClipBounds();
-        if (currentItem.error()) {
-            g2.setColor(errorBackgroundColor);
-        } else {
-            g2.setColor(getBackground());
-        }
+        g2.setColor(getBackground());
         g2.fillRect(clip.x, clip.y, clip.width, clip.height);
 
         var fontMetrics = g2.getFontMetrics();
