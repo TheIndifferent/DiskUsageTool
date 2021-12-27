@@ -5,7 +5,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 class MainPanel extends JPanel {
 

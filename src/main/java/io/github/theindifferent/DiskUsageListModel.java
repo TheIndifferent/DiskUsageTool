@@ -70,11 +70,15 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
 
     void refreshCurrent(DiskUsageDirectory dir) {
         var removeLength = current.files.size() + (hasParent() ? 1 : 0);
-        var addedLength = dir.files.size() + + (hasParent() ? 1 : 0);
+        var addedLength = dir.files.size() + +(hasParent() ? 1 : 0);
         current.files.clear();
-        current.files.addAll(dir.files);
         fireIntervalRemoved(this, 0, removeLength);
-        fireIntervalAdded(this, 0, addedLength);
+        if (dir.files.isEmpty() && dir.error()) {
+            current.error = true;
+        } else {
+            current.files.addAll(dir.files);
+            fireIntervalAdded(this, 0, addedLength);
+        }
     }
 
     @Override
