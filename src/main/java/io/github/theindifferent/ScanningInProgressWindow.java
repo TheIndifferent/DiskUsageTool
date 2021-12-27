@@ -1,29 +1,45 @@
 package io.github.theindifferent;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 import java.awt.BorderLayout;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class ScanningInProgressWindow extends JWindow {
 
-    private final PlainDocument document = createDocument();
+    private final DefaultListModel<Path> model;
     private final JScrollBar verticalScrollBar;
 
     ScanningInProgressWindow() {
-        var textArea = new JTextArea(document);
-        textArea.setEditable(false);
+        model = new DefaultListModel<>();
+        var list = new JList<>(model);
+        list.setSelectionModel(new DefaultListSelectionModel() {
+            @Override
+            public void setAnchorSelectionIndex(int anchorIndex) {
+            }
 
-        var scrollPane = new JScrollPane(textArea);
+            @Override
+            public void setLeadSelectionIndex(int leadIndex) {
+            }
+
+            @Override
+            public void setSelectionInterval(int index0, int index1) {
+            }
+
+            @Override
+            public void setLeadAnchorNotificationEnabled(boolean flag) {
+            }
+        });
+
+        var scrollPane = new JScrollPane(list);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
@@ -36,20 +52,9 @@ class ScanningInProgressWindow extends JWindow {
     }
 
     public void progress(List<Path> paths) {
-        var appending = paths.stream()
-                .map(Path::toString)
-                .collect(Collectors.joining("\n", "", "\n"));
-        try {
-            document.insertString(document.getLength(), appending, null);
-        } catch (BadLocationException e) {
-            e.printStackTrace();
-        }
+        paths.forEach(model::addElement);
         SwingUtilities.invokeLater(() -> {
             verticalScrollBar.setValue(verticalScrollBar.getMaximum());
         });
-    }
-
-    private PlainDocument createDocument() {
-        return new PlainDocument();
     }
 }
