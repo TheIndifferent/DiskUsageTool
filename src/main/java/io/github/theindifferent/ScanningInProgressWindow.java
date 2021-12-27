@@ -2,8 +2,11 @@ package io.github.theindifferent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JWindow;
+import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import java.awt.BorderLayout;
@@ -14,11 +17,20 @@ import java.util.stream.Collectors;
 class ScanningInProgressWindow extends JWindow {
 
     private final PlainDocument document = createDocument();
+    private final JScrollBar verticalScrollBar;
 
     ScanningInProgressWindow() {
         var textArea = new JTextArea(document);
+        textArea.setEditable(false);
+
+        var scrollPane = new JScrollPane(textArea);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+
+        verticalScrollBar = scrollPane.getVerticalScrollBar();
+
         var panel = new JPanel(new BorderLayout());
-        panel.add(textArea, BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.CENTER);
         panel.setBorder(BorderFactory.createTitledBorder("Scanning..."));
         setContentPane(panel);
     }
@@ -32,6 +44,9 @@ class ScanningInProgressWindow extends JWindow {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
+        SwingUtilities.invokeLater(() -> {
+            verticalScrollBar.setValue(verticalScrollBar.getMaximum());
+        });
     }
 
     private PlainDocument createDocument() {
