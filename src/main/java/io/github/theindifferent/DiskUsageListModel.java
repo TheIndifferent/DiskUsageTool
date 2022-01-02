@@ -1,6 +1,7 @@
 package io.github.theindifferent;
 
 import javax.swing.AbstractListModel;
+import java.util.Collections;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -72,12 +73,19 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
         var removeLength = current.files.size() + (hasParent() ? 1 : 0);
         var addedLength = dir.files.size() + +(hasParent() ? 1 : 0);
         current.files.clear();
+        current.memoizedSize = -1;
         fireIntervalRemoved(this, 0, removeLength);
         if (dir.files.isEmpty() && dir.error()) {
             current.error = true;
         } else {
             current.files.addAll(dir.files);
             fireIntervalAdded(this, 0, addedLength);
+        }
+        var d = current.parent();
+        while (d != null) {
+            d.memoizedSize = -1;
+            Collections.sort(d.files);
+            d = d.parent();
         }
     }
 
