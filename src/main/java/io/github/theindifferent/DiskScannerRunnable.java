@@ -4,26 +4,39 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DiskScannerRunnable implements Runnable {
 
     private final BlockingQueue<DiskUsageDirectory> dirsToScanQueue;
     private final BlockingQueue<Path> progressReportQueue;
+    private final BlockingQueue<List<DiskUsageItem>> collectionsToSortQueue;
     private final Semaphore workInProgressSemaphore;
+    private final AtomicBoolean interruptedForPhase2Marker;
 
     public DiskScannerRunnable(BlockingQueue<DiskUsageDirectory> dirsToScanQueue,
                                BlockingQueue<Path> progressReportQueue,
-                               Semaphore workInProgressSemaphore) {
+                               BlockingQueue<List<DiskUsageItem>> collectionsToSortQueue,
+                               Semaphore workInProgressSemaphore,
+                               AtomicBoolean interruptedForPhase2Marker) {
         this.dirsToScanQueue = dirsToScanQueue;
         this.progressReportQueue = progressReportQueue;
+        this.collectionsToSortQueue = collectionsToSortQueue;
         this.workInProgressSemaphore = workInProgressSemaphore;
+        this.interruptedForPhase2Marker = interruptedForPhase2Marker;
     }
 
     @Override
     public void run() {
         scanFromQueueUntilInterrupted();
+        if (!interruptedForPhase2Marker.get()) {
+            return;
+        }
+        sortCollections();
     }
 
     private void scanFromQueueUntilInterrupted() {
@@ -63,6 +76,7 @@ public class DiskScannerRunnable implements Runnable {
             if (attributes.isDirectory()) {
                 var dir = new DiskUsageDirectory(path, parent);
                 dirsToScanQueue.add(dir);
+                collectionsToSortQueue.add(dir.files);
                 return dir;
             }
             // anything that is not dir or file:
@@ -73,6 +87,21 @@ public class DiskScannerRunnable implements Runnable {
             System.err.println("Failed to read file attributes: " + path);
             ioex.printStackTrace();
             return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, true);
+        }
+    }
+
+    private void sortCollections() {
+        try {
+            workInProgressSemaphore.acquire();
+            try {
+                List<DiskUsageItem> item;
+                while ((item = collectionsToSortQueue.poll()) != null) {
+                    Collections.sort(item);
+                }
+            } finally {
+                workInProgressSemaphore.release();
+            }
+        } catch (InterruptedException iex) {
         }
     }
 }

@@ -40,11 +40,15 @@ public class DiskUsageDirectory implements DiskUsageItem {
         return parent;
     }
 
+    private volatile long memoizedSize;
     @Override
     public long size() {
-        return files.stream()
-                    .mapToLong(DiskUsageItem::size)
-                    .sum();
+        if (memoizedSize == 0) {
+            memoizedSize = files.stream()
+                        .mapToLong(DiskUsageItem::size)
+                        .sum();
+        }
+        return memoizedSize;
     }
 
     @Override
