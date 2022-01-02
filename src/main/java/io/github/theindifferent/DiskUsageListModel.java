@@ -81,6 +81,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
             current.files.addAll(dir.files);
             fireIntervalAdded(this, 0, addedLength);
         }
+        // TODO find a way to move this out of EDT:
         var d = current.parent();
         while (d != null) {
             d.memoizedSize = -1;

@@ -1,8 +1,6 @@
 package io.github.theindifferent;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -20,60 +18,45 @@ public class DiskScanner {
     }
 
     public DiskUsageDirectory scan() {
-        if (!Files.isDirectory(scanPath)) {
-            throw new IllegalStateException("Scanning path is not a directory: " + scanPath);
-        }
-
-        var visitor = new VisitorImpl(currentScanningDir);
-        try {
-            Files.walkFileTree(scanPath, visitor);
-        } catch (IOException ioex) {
-            ioex.printStackTrace();
-        }
-        return visitor.dir;
+        var rootDir = new DiskUsageDirectory(scanPath, null);
+        scanDirectory(rootDir);
+        return rootDir;
     }
 
-    private static class VisitorImpl implements FileVisitor<Path> {
-
-        private final Consumer<Path> currentScanningDir;
-        private DiskUsageDirectory dir;
-
-        private VisitorImpl(Consumer<Path> currentScanningDir) {
-            this.currentScanningDir = currentScanningDir;
-        }
-
-        @Override
-        public FileVisitResult preVisitDirectory(Path dirPath, BasicFileAttributes attrs) {
-            currentScanningDir.accept(dirPath);
-            dir = new DiskUsageDirectory(dirPath, dir);
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
-            var file = new DiskUsageFile(filePath, dir);
-            dir.files.add(file);
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path filePath, IOException exc) {
-            if (exc != null)
-                exc.printStackTrace();
-            dir.error = true;
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult postVisitDirectory(Path dirPath, IOException exc) {
-            if (exc != null)
-                exc.printStackTrace();
-            Collections.sort(dir.files);
-            if (dir.parent() != null) {
-                dir.parent().files.add(dir);
-                dir = dir.parent();
+    private void scanDirectory(DiskUsageDirectory dir) {
+        currentScanningDir.accept(dir.path());
+        try (var dirStream = Files.newDirectoryStream(dir.path())) {
+            for (var path : dirStream) {
+                var item = itemForPath(path, dir);
+                dir.files.add(item);
             }
-            return FileVisitResult.CONTINUE;
+        } catch (IOException e) {
+            System.err.println("Failed to read directory: " + dir.path());
+            e.printStackTrace();
+            dir.error = true;
+        }
+        Collections.sort(dir.files);
+    }
+
+    private DiskUsageItem itemForPath(Path path, DiskUsageDirectory parent) {
+        try {
+            var attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            if (attributes.isRegularFile()) {
+                return new DiskUsageFile(path, parent, path.getFileName().toString(), attributes.size(), false);
+            }
+            if (attributes.isDirectory()) {
+                var dir = new DiskUsageDirectory(path, parent);
+                scanDirectory(dir);
+                return dir;
+            }
+            // anything that is not dir or file:
+            //if (attributes.isSymbolicLink() || attributes.isOther()) {
+            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, false);
+            //}
+        } catch (IOException ioex) {
+            System.err.println("Failed to read file attributes: " + path);
+            ioex.printStackTrace();
+            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, true);
         }
     }
 }

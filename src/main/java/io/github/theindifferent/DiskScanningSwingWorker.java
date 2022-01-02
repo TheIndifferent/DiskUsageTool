@@ -32,7 +32,7 @@ class DiskScanningSwingWorker extends SwingWorker<DiskUsageDirectory, Path> {
 
     @Override
     protected DiskUsageDirectory doInBackground() {
-        return new DiskScannerParallel(pathToScan, this::publish)
+        return new DiskScanner(pathToScan, this::publish)
                 .scan();
     }
 }
