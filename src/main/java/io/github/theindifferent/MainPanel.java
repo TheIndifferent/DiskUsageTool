@@ -42,6 +42,8 @@ class MainPanel extends JPanel {
         list.getInputMap().put(KeyStroke.getKeyStroke("ENTER"), "enterDirectory");
         list.getInputMap().put(KeyStroke.getKeyStroke("BACK_SPACE"), "goUp");
         list.getInputMap().put(KeyStroke.getKeyStroke('r'), "refreshCurrent");
+        list.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "enterDirectory");
+        list.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "goUp");
         list.getInputMap().put(KeyStroke.getKeyStroke("COPY"), TransferHandler.getCopyAction().getValue(Action.NAME));
         list.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), TransferHandler.getCopyAction().getValue(Action.NAME));
         list.getActionMap().put("enterDirectory", new AbstractAction() {
