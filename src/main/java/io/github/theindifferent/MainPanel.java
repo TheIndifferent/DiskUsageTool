@@ -83,12 +83,13 @@ class MainPanel extends JPanel {
         progressWindow.setLocation(list.getLocationOnScreen());
         progressWindow.setVisible(true);
         var currentDir = listModel.currentDir();
+        var itemsBeforeRefresh = currentDir.files.size();
         new DiskScanningSwingWorker(
-                currentDir.path(),
+                currentDir,
                 progressWindow::progress,
                 dir -> {
                     progressWindow.dispose();
-                    listModel.refreshCurrent(dir);
+                    listModel.refreshCurrent(itemsBeforeRefresh);
                 })
                 .execute();
     }

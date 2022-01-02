@@ -9,17 +9,24 @@ import java.util.function.Consumer;
 
 public class DiskScanner {
 
-    private final Path scanPath;
+    private final DiskUsageDirectory dirToScan;
     private final Consumer<Path> currentScanningDir;
 
-    public DiskScanner(Path scanPath, Consumer<Path> currentScanningDir) {
-        this.scanPath = scanPath;
+    public DiskScanner(DiskUsageDirectory dirToScan, Consumer<Path> currentScanningDir) {
+        this.dirToScan = dirToScan;
         this.currentScanningDir = currentScanningDir;
     }
 
     public DiskUsageDirectory scan() {
-        var rootDir = new DiskUsageDirectory(scanPath, null);
+        var rootDir = dirToScan;
+        rootDir.files.clear();
+        rootDir.error = false;
         scanDirectory(rootDir);
+        var d = rootDir.parent();
+        while (d != null) {
+            Collections.sort(d.files);
+            d = d.parent();
+        }
         return rootDir;
     }
 

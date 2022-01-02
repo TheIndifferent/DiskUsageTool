@@ -1,7 +1,6 @@
 package io.github.theindifferent;
 
 import javax.swing.AbstractListModel;
-import java.util.Collections;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -69,25 +68,11 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
         }
     }
 
-    void refreshCurrent(DiskUsageDirectory dir) {
-        var removeLength = current.files.size() + (hasParent() ? 1 : 0);
-        var addedLength = dir.files.size() + +(hasParent() ? 1 : 0);
-        current.files.clear();
-        current.memoizedSize = -1;
+    void refreshCurrent(int itemsBeforeRefresh) {
+        var removeLength = itemsBeforeRefresh + (hasParent() ? 1 : 0);
+        var addedLength = current.files.size() + (hasParent() ? 1 : 0);
         fireIntervalRemoved(this, 0, removeLength);
-        if (dir.files.isEmpty() && dir.error()) {
-            current.error = true;
-        } else {
-            current.files.addAll(dir.files);
-            fireIntervalAdded(this, 0, addedLength);
-        }
-        // TODO find a way to move this out of EDT:
-        var d = current.parent();
-        while (d != null) {
-            d.memoizedSize = -1;
-            Collections.sort(d.files);
-            d = d.parent();
-        }
+        fireIntervalAdded(this, 0, addedLength);
     }
 
     @Override

@@ -3,6 +3,7 @@ package io.github.theindifferent;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DiskUsageDirectory implements DiskUsageItem {
 
@@ -17,12 +18,7 @@ public class DiskUsageDirectory implements DiskUsageItem {
         this.path = path;
         this.parent = parent;
 
-        var fileName = path.getFileName();
-        if (fileName == null) {
-            this.name = path.toString();
-        } else {
-            this.name = fileName.toString();
-        }
+        this.name = Objects.requireNonNullElse(path.getFileName(), path).toString();
     }
 
     @Override
@@ -40,15 +36,11 @@ public class DiskUsageDirectory implements DiskUsageItem {
         return parent;
     }
 
-    volatile long memoizedSize = -1;
     @Override
     public long size() {
-        if (memoizedSize == -1) {
-            memoizedSize = files.stream()
-                        .mapToLong(DiskUsageItem::size)
-                        .sum();
-        }
-        return memoizedSize;
+        return files.stream()
+                    .mapToLong(DiskUsageItem::size)
+                    .sum();
     }
 
     @Override
