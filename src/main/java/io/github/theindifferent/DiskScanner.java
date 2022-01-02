@@ -58,12 +58,16 @@ public class DiskScanner {
 
         @Override
         public FileVisitResult visitFileFailed(Path filePath, IOException exc) {
+            if (exc != null)
+                exc.printStackTrace();
             dir.error = true;
             return FileVisitResult.CONTINUE;
         }
 
         @Override
         public FileVisitResult postVisitDirectory(Path dirPath, IOException exc) {
+            if (exc != null)
+                exc.printStackTrace();
             Collections.sort(dir.files);
             if (dir.parent() != null) {
                 dir.parent().files.add(dir);

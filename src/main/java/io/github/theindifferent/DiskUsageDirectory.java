@@ -8,7 +8,6 @@ public class DiskUsageDirectory implements DiskUsageItem {
 
     private final Path path;
     private final DiskUsageDirectory parent;
-
     private final String name;
 
     boolean error;
