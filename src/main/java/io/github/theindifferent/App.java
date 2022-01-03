@@ -39,6 +39,8 @@ public class App implements Runnable {
         folderChooser.setDialogTitle("Choose folder to scan disk usage");
         if (folderChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
             dirConsumer.accept(folderChooser.getSelectedFile().toPath());
+        } else {
+            System.exit(0);
         }
     }
 
