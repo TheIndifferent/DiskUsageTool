@@ -53,23 +53,27 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
         }
         var newCurrent = current.files.get(index);
         if (newCurrent.directory()) {
+            var from = current;
+            var to = (DiskUsageDirectory) newCurrent;
             var removeLength = current.files.size() + (hasParent() ? 1 : 0);
             current = (DiskUsageDirectory) newCurrent;
             var addedLength = current.files.size() + (hasParent() ? 1 : 0);
             fireIntervalRemoved(this, 0, removeLength);
             fireIntervalAdded(this, 0, addedLength);
-            fireDirChanged();
+            fireDirChanged(from, to);
         }
     }
 
     void goToParent() {
         if (current.parent() != null) {
+            var from = current;
+            var to = current.parent();
             var removedLength = current.files.size() + 1;
             current = current.parent();
             var addedLength = current.files.size() + (hasParent() ? 1 : 0);
             fireIntervalRemoved(this, 0, removedLength);
             fireIntervalAdded(this, 0, addedLength);
-            fireDirChanged();
+            fireDirChanged(from, to);
         }
     }
 
@@ -111,11 +115,11 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
         }
     }
 
-    private void fireDirChanged() {
-        dirChangeListeners.forEach(listener -> listener.dirChanged(current));
+    private void fireDirChanged(DiskUsageDirectory from, DiskUsageDirectory to) {
+        dirChangeListeners.forEach(listener -> listener.dirChanged(from, to));
     }
 
     public interface DirChangeListener {
-        void dirChanged(DiskUsageDirectory dir);
+        void dirChanged(DiskUsageDirectory from, DiskUsageDirectory to);
     }
 }

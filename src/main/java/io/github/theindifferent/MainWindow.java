@@ -16,7 +16,7 @@ class MainWindow extends JFrame implements DirChangeListener {
     }
 
     @Override
-    public void dirChanged(DiskUsageDirectory dir) {
-        setTitle("Disk Usage Tool: " + dir.path());
+    public void dirChanged(DiskUsageDirectory from, DiskUsageDirectory to) {
+        setTitle("Disk Usage Tool: " + to.path());
     }
 }
