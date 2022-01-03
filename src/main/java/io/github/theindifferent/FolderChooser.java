@@ -12,6 +12,7 @@ import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
@@ -48,6 +49,7 @@ public class FolderChooser extends JPanel {
         treeSelectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree = new JTree(treeModel);
         tree.addTreeExpansionListener(new FolderTreeExpansionListener());
+        tree.addTreeSelectionListener(this::treeNodeSelected);
         tree.setSelectionModel(treeSelectionModel);
         tree.setDragEnabled(false);
         tree.setEditable(false);
@@ -55,7 +57,6 @@ public class FolderChooser extends JPanel {
 
         var treeScrollPane = new JScrollPane(tree);
         add(treeScrollPane, BorderLayout.CENTER);
-
 
         pathField = new JTextField("");
         var pathPanel = new JPanel(new BorderLayout());
@@ -88,6 +89,14 @@ public class FolderChooser extends JPanel {
                 new LoadDirWorker(dir)
                         .execute();
             }
+        }
+    }
+
+    private void treeNodeSelected(TreeSelectionEvent e) {
+        var obj = e.getNewLeadSelectionPath().getLastPathComponent();
+        if (obj instanceof DirNode) {
+            var node = (DirNode) obj;
+            pathField.setText(node.path.toString());
         }
     }
 
