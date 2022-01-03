@@ -1,11 +1,14 @@
 package io.github.theindifferent;
 
 import javax.swing.AbstractListModel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
 
+    private final List<DirChangeListener> dirChangeListeners = new ArrayList<>();
     private DiskUsageDirectory current;
 
     public DiskUsageListModel(DiskUsageDirectory current) {
@@ -55,6 +58,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
             var addedLength = current.files.size() + (hasParent() ? 1 : 0);
             fireIntervalRemoved(this, 0, removeLength);
             fireIntervalAdded(this, 0, addedLength);
+            fireDirChanged();
         }
     }
 
@@ -65,6 +69,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
             var addedLength = current.files.size() + (hasParent() ? 1 : 0);
             fireIntervalRemoved(this, 0, removedLength);
             fireIntervalAdded(this, 0, addedLength);
+            fireDirChanged();
         }
     }
 
@@ -92,5 +97,25 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
             return current.files.get(index - 1);
         }
         return current.files.get(index);
+    }
+
+    public void addDirChangeListener(DirChangeListener listener) {
+        if (listener != null) {
+            dirChangeListeners.add(listener);
+        }
+    }
+
+    public void removeDirChangeListener(DirChangeListener listener) {
+        if (listener != null) {
+            dirChangeListeners.remove(listener);
+        }
+    }
+
+    private void fireDirChanged() {
+        dirChangeListeners.forEach(listener -> listener.dirChanged(current));
+    }
+
+    public interface DirChangeListener {
+        void dirChanged(DiskUsageDirectory dir);
     }
 }

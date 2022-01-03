@@ -1,5 +1,7 @@
 package io.github.theindifferent;
 
+import io.github.theindifferent.DiskUsageListModel.DirChangeListener;
+
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
@@ -21,11 +23,12 @@ import java.nio.file.Path;
 
 class MainPanel extends JPanel {
 
-    MainPanel(Path path) {
+    MainPanel(Path path, DirChangeListener dirChangeListener) {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         var model = new DiskUsageListModel(new DiskUsageDirectory(path, null));
+        model.addDirChangeListener(dirChangeListener);
         var list = createList(model);
         var scrollPane = new JScrollPane(list);
         add(scrollPane, BorderLayout.CENTER);
