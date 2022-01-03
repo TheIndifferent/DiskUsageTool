@@ -16,6 +16,8 @@ public interface DiskUsageItem extends Comparable<DiskUsageItem> {
 
     boolean error();
 
+    String errorString();
+
     default int compareTo(DiskUsageItem o) {
         var sizeDiff = size() - o.size();
         if (sizeDiff == 0) {

@@ -12,6 +12,7 @@ public class DiskUsageDirectory implements DiskUsageItem {
     private final String name;
 
     boolean error;
+    String errorString;
     List<DiskUsageItem> files = new ArrayList<>();
 
     public DiskUsageDirectory(Path path, DiskUsageDirectory parent) {
@@ -51,5 +52,10 @@ public class DiskUsageDirectory implements DiskUsageItem {
     @Override
     public boolean error() {
         return error;
+    }
+
+    @Override
+    public String errorString() {
+        return errorString;
     }
 }

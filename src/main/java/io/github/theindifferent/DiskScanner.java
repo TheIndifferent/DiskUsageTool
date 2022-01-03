@@ -41,6 +41,7 @@ public class DiskScanner {
             System.err.println("Failed to read directory: " + dir.path());
             e.printStackTrace();
             dir.error = true;
+            dir.errorString = e.toString();
         }
         Collections.sort(dir.files);
     }
@@ -49,7 +50,7 @@ public class DiskScanner {
         try {
             var attributes = Files.readAttributes(path, BasicFileAttributes.class);
             if (attributes.isRegularFile()) {
-                return new DiskUsageFile(path, parent, path.getFileName().toString(), attributes.size(), false);
+                return new DiskUsageFile(path, parent, path.getFileName().toString(), attributes.size(), false, null);
             }
             if (attributes.isDirectory()) {
                 var dir = new DiskUsageDirectory(path, parent);
@@ -58,12 +59,12 @@ public class DiskScanner {
             }
             // anything that is not dir or file:
             //if (attributes.isSymbolicLink() || attributes.isOther()) {
-            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, false);
+            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, false, null);
             //}
         } catch (IOException ioex) {
             System.err.println("Failed to read file attributes: " + path);
             ioex.printStackTrace();
-            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, true);
+            return new DiskUsageFile(path, parent, path.getFileName().toString(), 0, true, ioex.toString());
         }
     }
 }

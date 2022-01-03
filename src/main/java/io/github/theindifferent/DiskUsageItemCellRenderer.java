@@ -158,6 +158,7 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
             setForeground(list.getForeground());
         }
         setFont(list.getFont());
+        setToolTipText(currentItem.errorString());
 
         return this;
     }

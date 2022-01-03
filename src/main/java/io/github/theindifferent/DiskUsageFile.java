@@ -9,13 +9,15 @@ public class DiskUsageFile implements DiskUsageItem {
     private final String name;
     private final long size;
     private final boolean error;
+    private final String errorString;
 
-    public DiskUsageFile(Path path, DiskUsageDirectory parent, String name, long size, boolean error) {
+    public DiskUsageFile(Path path, DiskUsageDirectory parent, String name, long size, boolean error, String errorString) {
         this.path = path;
         this.parent = parent;
         this.name = name;
         this.size = size;
         this.error = error;
+        this.errorString = errorString;
     }
 
     @Override
@@ -46,5 +48,10 @@ public class DiskUsageFile implements DiskUsageItem {
     @Override
     public boolean error() {
         return error;
+    }
+
+    @Override
+    public String errorString() {
+        return errorString;
     }
 }
