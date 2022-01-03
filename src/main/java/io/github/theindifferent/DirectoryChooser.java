@@ -7,7 +7,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeModelEvent;
@@ -28,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class DirectoryChooser extends JPanel {
@@ -64,11 +63,13 @@ public class DirectoryChooser extends JPanel {
         pathPanel.add(pathField, BorderLayout.CENTER);
         add(pathPanel, BorderLayout.NORTH);
 
-        new LoadRootsWorker(rootNode).execute();
+        CompletableFuture.completedStage(rootNode)
+                         .thenApplyAsync(this::listRootNodes)
+                         .thenAccept(nodes -> SwingUtilities.invokeLater(() -> updateRootNode(rootNode, nodes)));
         SwingUtilities.invokeLater(tree::requestFocusInWindow);
     }
 
-    private void showErrorDialog(String message, Exception ex) {
+    private void showErrorDialog(String message, Throwable ex) {
         var writer = new StringWriter();
         var print = new PrintWriter(writer);
         ex.printStackTrace(print);
@@ -82,12 +83,11 @@ public class DirectoryChooser extends JPanel {
                 JOptionPane.ERROR_MESSAGE);
     }
 
-    private void loadNode(TreeNode node) {
+    private void loadSubnodes(TreeNode node) {
         if (node instanceof DirNode) {
             var dir = (DirNode) node;
             if (dir.nodes == null) {
-                new LoadDirWorker(dir)
-                        .execute();
+                loadDirNode(dir);
             }
         }
     }
@@ -98,6 +98,75 @@ public class DirectoryChooser extends JPanel {
             var node = (DirNode) obj;
             pathField.setText(node.path.toString());
         }
+    }
+
+    private List<TreeNode> listRootNodes(RootNode rootNode) {
+        var nodes = new ArrayList<TreeNode>();
+        for (var path : FileSystems.getDefault().getRootDirectories()) {
+            if (Files.isDirectory(path) && Files.isReadable(path)) {
+                var node = new DirNode(path, rootNode);
+                nodes.add(node);
+            }
+        }
+        nodes.sort(Comparator.comparing(TreeNode::toString));
+
+        nodes.forEach(n -> loadDirNode((DirNode) n));
+        return nodes;
+    }
+
+    private void updateRootNode(RootNode rootNode, List<TreeNode> nodes) {
+        rootNode.nodes = nodes;
+        var event = new TreeModelEvent(this, new Object[]{rootNode});
+        treeModel.modelListeners
+                .forEach(listener -> listener.treeStructureChanged(event));
+        if (nodes.size() == 1) {
+            SwingUtilities.invokeLater(() -> tree.expandRow(0));
+        }
+    }
+
+    private void loadDirNode(DirNode dirNode) {
+        CompletableFuture
+                .completedStage(dirNode)
+                .thenComposeAsync(node -> {
+                    try (var dirStream = Files.newDirectoryStream(node.path)) {
+                        var nodes = new ArrayList<TreeNode>();
+                        for (var path : dirStream) {
+                            if (Files.isDirectory(path) && Files.isReadable(path)) {
+                                var n = new DirNode(path, node);
+                                nodes.add(n);
+                            }
+                        }
+                        nodes.sort(Comparator.comparing(TreeNode::toString));
+
+                        var pathList = new ArrayList<TreeNode>();
+                        TreeNode n = node;
+                        while (n != null) {
+                            pathList.add(n);
+                            n = n.parent();
+                        }
+                        var path = new Object[pathList.size()];
+                        for (int i = 0; i < path.length; i++) {
+                            path[i] = pathList.get(path.length - 1 - i);
+                        }
+
+                        return CompletableFuture.completedStage(new DirNodesLoadResult(nodes, path));
+
+                    } catch (IOException e) {
+                        return CompletableFuture.failedStage(e);
+                    }
+                })
+                .whenComplete((res, t) -> SwingUtilities.invokeLater(() -> {
+                    if (t != null) {
+                        t.printStackTrace();
+                        showErrorDialog("Failed to list directories", t);
+                    }
+                    if (res != null) {
+                        dirNode.nodes = res.nodes;
+                        var event = new TreeModelEvent(this, res.treePath);
+                        treeModel.modelListeners
+                                .forEach(listener -> listener.treeStructureChanged(event));
+                    }
+                }));
     }
 
     private class DirChooserTreeModel implements TreeModel {
@@ -185,7 +254,7 @@ public class DirectoryChooser extends JPanel {
             var path = event.getPath();
             var node = (TreeNode) path.getLastPathComponent();
             node.nodes()
-                .forEach(DirectoryChooser.this::loadNode);
+                .forEach(DirectoryChooser.this::loadSubnodes);
         }
 
         @Override
@@ -260,102 +329,6 @@ public class DirectoryChooser extends JPanel {
         @Override
         public String toString() {
             return "";
-        }
-    }
-
-    private class LoadRootsWorker extends SwingWorker<List<TreeNode>, Void> {
-
-        private final RootNode rootNode;
-
-        private LoadRootsWorker(RootNode rootNode) {
-            this.rootNode = rootNode;
-        }
-
-        @Override
-        protected List<TreeNode> doInBackground() {
-            var nodes = new ArrayList<TreeNode>();
-            for (var path : FileSystems.getDefault().getRootDirectories()) {
-                if (Files.isDirectory(path) && Files.isReadable(path)) {
-                    var node = new DirNode(path, rootNode);
-                    nodes.add(node);
-                }
-            }
-            nodes.sort(Comparator.comparing(TreeNode::toString));
-
-            nodes.forEach(n -> new LoadDirWorker((DirNode) n)
-                    .execute());
-
-            return nodes;
-        }
-
-        @Override
-        protected void done() {
-            try {
-                var nodes = get();
-                rootNode.nodes = nodes;
-                var event = new TreeModelEvent(this, new Object[]{rootNode});
-                treeModel.modelListeners
-                        .forEach(listener -> listener.treeStructureChanged(event));
-                if (nodes.size() == 1) {
-                    SwingUtilities.invokeLater(() -> tree.expandRow(0));
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-                showErrorDialog("Failed to list file system roots", e);
-            }
-        }
-    }
-
-    private class LoadDirWorker extends SwingWorker<DirNodesLoadResult, Void> {
-
-        private final DirNode node;
-
-        private LoadDirWorker(DirNode node) {
-            this.node = node;
-        }
-
-        @Override
-        protected DirNodesLoadResult doInBackground() throws Exception {
-            try (var dirStream = Files.newDirectoryStream(node.path)) {
-                var nodes = new ArrayList<TreeNode>();
-                for (var path : dirStream) {
-                    if (Files.isDirectory(path) && Files.isReadable(path)) {
-                        var n = new DirNode(path, node);
-                        nodes.add(n);
-                    }
-                }
-                nodes.sort(Comparator.comparing(TreeNode::toString));
-
-                var pathList = new ArrayList<TreeNode>();
-                TreeNode n = node;
-                while (n != null) {
-                    pathList.add(n);
-                    n = n.parent();
-                }
-                var path = new Object[pathList.size()];
-                for (int i = 0; i < path.length; i++) {
-                    path[i] = pathList.get(path.length - 1 - i);
-                }
-
-                return new DirNodesLoadResult(nodes, path);
-
-            } catch (IOException e) {
-                throw e;
-            }
-        }
-
-        @Override
-        protected void done() {
-            try {
-                var res = get();
-                node.nodes = res.nodes;
-                var event = new TreeModelEvent(this, res.treePath);
-                treeModel.modelListeners
-                        .forEach(listener -> listener.treeStructureChanged(event));
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-                showErrorDialog("Failed to list directories", e);
-            }
         }
     }
 
