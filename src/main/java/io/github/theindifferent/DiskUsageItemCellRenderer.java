@@ -51,7 +51,7 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
         var xOfName = clip.x + 6 + longestFileSize + 6 + longestIcon + 6;
 
         if (isGoToParentCell) {
-            paintIcon(g2, "FileChooser.upFolderIcon", xOfIcon, clip.y);
+            paintIcon(g2, "FileChooser.upFolderIcon", xOfIcon, clip.y, fontAscent);
             g2.setColor(getForeground());
             g2.drawString("Up", xOfName, fontAscent);
             return;
@@ -77,7 +77,8 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
                   ? "FileChooser.directoryIcon"
                   : "FileChooser.fileIcon",
                   xOfIcon,
-                  clip.y);
+                  clip.y,
+                  fontAscent);
         // draw name:
         g2.drawString(currentItem.name(), xOfName, fontAscent);
         // draw visual size comparison:
@@ -92,14 +93,29 @@ public class DiskUsageItemCellRenderer extends JComponent implements ListCellRen
         g2.fillRect(xOfBar, clip.y + 1, (int) currentGradientWidth, clip.height - 2);
     }
 
-    private void paintIcon(Graphics2D g2, String iconKey, int x, int y) {
+    private void paintIcon(Graphics2D g2, String iconKey, int x, int y, int fontAscent) {
         var icon = UIManager.getIcon(iconKey);
-        if (icon == null) {
-            var ex = new IllegalStateException("LookAndFeel does not have initialized icons for files and folders");
-            ex.printStackTrace();
-            throw ex;
+        if (icon != null) {
+            icon.paintIcon(this, g2, x, y);
+            return;
         }
-        icon.paintIcon(this, g2, x, y);
+        var ex = new IllegalStateException("LookAndFeel does not have initialized icons for " + iconKey);
+        ex.printStackTrace();
+        String iconCharacter;
+        switch (iconKey) {
+            case "FileChooser.directoryIcon":
+                iconCharacter = "\uD83D\uDDC1";
+                break;
+            case "FileChooser.fileIcon":
+                iconCharacter = "\uD83D\uDDCB";
+                break;
+            case "FileChooser.upFolderIcon":
+                iconCharacter = "⮬";
+                break;
+            default:
+                throw ex;
+        }
+        g2.drawString(iconCharacter, x, y + fontAscent);
     }
 
     @Override
