@@ -7,6 +7,7 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
@@ -20,6 +21,7 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.nio.file.Path;
+import java.util.function.IntConsumer;
 
 class MainPanel extends JPanel {
 
@@ -79,6 +81,7 @@ class MainPanel extends JPanel {
                 return TransferHandler.COPY;
             }
         });
+        model.addDirChangeListener((from, to) -> listenDirChanged(from, to, list::setSelectedIndex));
         return list;
     }
 
@@ -97,5 +100,27 @@ class MainPanel extends JPanel {
                     listModel.refreshCurrent(itemsBeforeRefresh);
                 })
                 .execute();
+    }
+
+    void listenDirChanged(DiskUsageDirectory from, DiskUsageDirectory to, IntConsumer indexConsumer) {
+        // did we go down one level?
+        if (from == to.parent()) {
+            indexConsumer.accept(0);
+            return;
+        }
+        // did we go one level up?
+        if (from.parent() == to) {
+            for (int i = 0; i < to.files.size(); i++) {
+                if (to.files.get(i) == from) {
+                    indexConsumer.accept(i + (to.parent() != null ? 1 : 0));
+                    return;
+                }
+            }
+        }
+        JOptionPane.showMessageDialog(this,
+                                      "Changed to unrelated directory,\nFrom: '"
+                                              + from.path() + "'\nTo: '" + to.path() + "'",
+                                      "Error",
+                                      JOptionPane.ERROR_MESSAGE);
     }
 }

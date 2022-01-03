@@ -119,6 +119,7 @@ public class DiskUsageListModel extends AbstractListModel<DiskUsageItem> {
         dirChangeListeners.forEach(listener -> listener.dirChanged(from, to));
     }
 
+    @FunctionalInterface
     public interface DirChangeListener {
         void dirChanged(DiskUsageDirectory from, DiskUsageDirectory to);
     }
