@@ -23,6 +23,10 @@ public class App implements Runnable {
             UIManager.setLookAndFeel(new NimbusLookAndFeel());
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                                          "Unsupported LookAndFeel,\n" + e,
+                                          "Error",
+                                          JOptionPane.ERROR_MESSAGE);
         }
         chooseDirectoryToScan(this::checkPathAndShowMainWindow);
     }
