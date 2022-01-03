@@ -31,24 +31,24 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public class FolderChooser extends JPanel {
+public class DirectoryChooser extends JPanel {
 
     private final Consumer<Path> dirConsumer;
-    private final FileChooserTreeModel treeModel;
+    private final DirChooserTreeModel treeModel;
     private final TreeSelectionModel treeSelectionModel;
     private final JTextField pathField;
     private final JTree tree;
 
-    public FolderChooser(Consumer<Path> dirConsumer) {
+    public DirectoryChooser(Consumer<Path> dirConsumer) {
         super(new BorderLayout());
         this.dirConsumer = dirConsumer;
 
         var rootNode = new RootNode();
-        treeModel = new FileChooserTreeModel(rootNode);
+        treeModel = new DirChooserTreeModel(rootNode);
         treeSelectionModel = new DefaultTreeSelectionModel();
         treeSelectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree = new JTree(treeModel);
-        tree.addTreeExpansionListener(new FolderTreeExpansionListener());
+        tree.addTreeExpansionListener(new DirTreeExpansionListener());
         tree.addTreeSelectionListener(this::treeNodeSelected);
         tree.setSelectionModel(treeSelectionModel);
         tree.setDragEnabled(false);
@@ -76,7 +76,7 @@ public class FolderChooser extends JPanel {
         print.close();
 
         JOptionPane.showMessageDialog(
-                FolderChooser.this,
+                DirectoryChooser.this,
                 message + "\n\n" + writer,
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
@@ -100,13 +100,13 @@ public class FolderChooser extends JPanel {
         }
     }
 
-    private class FileChooserTreeModel implements TreeModel {
+    private class DirChooserTreeModel implements TreeModel {
 
         private final LoadingNode loadingNode = new LoadingNode();
         private final List<TreeModelListener> modelListeners = new ArrayList<>();
         private final RootNode rootNode;
 
-        private FileChooserTreeModel(RootNode rootNode) {
+        private DirChooserTreeModel(RootNode rootNode) {
             this.rootNode = rootNode;
         }
 
@@ -178,14 +178,14 @@ public class FolderChooser extends JPanel {
         }
     }
 
-    private class FolderTreeExpansionListener implements TreeExpansionListener {
+    private class DirTreeExpansionListener implements TreeExpansionListener {
 
         @Override
         public void treeExpanded(TreeExpansionEvent event) {
             var path = event.getPath();
             var node = (TreeNode) path.getLastPathComponent();
             node.nodes()
-                .forEach(FolderChooser.this::loadNode);
+                .forEach(DirectoryChooser.this::loadNode);
         }
 
         @Override
