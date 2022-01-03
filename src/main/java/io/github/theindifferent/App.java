@@ -1,6 +1,8 @@
 package io.github.theindifferent;
 
-import javax.swing.JFileChooser;
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -32,16 +34,29 @@ public class App implements Runnable {
     }
 
     private void chooseDirectoryToScan(Consumer<Path> dirConsumer) {
-        var folderChooser = new JFileChooser(System.getProperty("user.home"));
-        folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        folderChooser.setMultiSelectionEnabled(false);
-        folderChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-        folderChooser.setDialogTitle("Choose folder to scan disk usage");
-        if (folderChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            dirConsumer.accept(folderChooser.getSelectedFile().toPath());
-        } else {
-            System.exit(0);
-        }
+        var chooserPanel = new FolderChooser(dirConsumer);
+        chooserPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+
+        var frame = new JFrame("Choose path to scan");
+        frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        frame.setContentPane(chooserPanel);
+        frame.pack();
+        var frameSize = frame.getSize();
+        int w = Math.max(frameSize.width, 400);
+        int h = Math.max(frameSize.height, 800);
+        frame.setSize(w, h);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+//        var folderChooser = new JFileChooser(System.getProperty("user.home"));
+//        folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+//        folderChooser.setMultiSelectionEnabled(false);
+//        folderChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+//        folderChooser.setDialogTitle("Choose folder to scan disk usage");
+//        if (folderChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+//            dirConsumer.accept(folderChooser.getSelectedFile().toPath());
+//        } else {
+//            System.exit(0);
+//        }
     }
 
     private void checkPathAndShowMainWindow(Path path) {
