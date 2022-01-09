@@ -7,11 +7,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
@@ -28,6 +31,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class DirectoryChooser extends JPanel {
@@ -37,12 +42,13 @@ public class DirectoryChooser extends JPanel {
     private final TreeSelectionModel treeSelectionModel;
     private final JTextField pathField;
     private final JTree tree;
+    private final RootNode rootNode;
 
     public DirectoryChooser(Consumer<Path> dirConsumer) {
         super(new BorderLayout());
         this.dirConsumer = dirConsumer;
 
-        var rootNode = new RootNode();
+        rootNode = new RootNode();
         treeModel = new DirChooserTreeModel(rootNode);
         treeSelectionModel = new DefaultTreeSelectionModel();
         treeSelectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -58,6 +64,7 @@ public class DirectoryChooser extends JPanel {
         add(treeScrollPane, BorderLayout.CENTER);
 
         pathField = new JTextField("");
+        pathField.getDocument().addDocumentListener(new PathFieldDocumentListener());
         var pathPanel = new JPanel(new BorderLayout());
         pathPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
         pathPanel.add(pathField, BorderLayout.CENTER);
@@ -127,7 +134,7 @@ public class DirectoryChooser extends JPanel {
     private void loadDirNode(DirNode dirNode) {
         CompletableFuture
                 .completedStage(dirNode)
-                .thenComposeAsync(node -> {
+                .thenApplyAsync(node -> {
                     try (var dirStream = Files.newDirectoryStream(node.path)) {
                         var nodes = new ArrayList<TreeNode>();
                         for (var path : dirStream) {
@@ -149,10 +156,10 @@ public class DirectoryChooser extends JPanel {
                             path[i] = pathList.get(path.length - 1 - i);
                         }
 
-                        return CompletableFuture.completedStage(new DirNodesLoadResult(nodes, path));
+                        return new DirNodesLoadResult(nodes, path);
 
                     } catch (IOException e) {
-                        return CompletableFuture.failedStage(e);
+                        throw new CompletionException(e);
                     }
                 })
                 .whenComplete((res, t) -> SwingUtilities.invokeLater(() -> {
@@ -167,6 +174,51 @@ public class DirectoryChooser extends JPanel {
                                 .forEach(listener -> listener.treeStructureChanged(event));
                     }
                 }));
+    }
+
+    private void pathFieldUpdated(DocumentEvent event) {
+        var doc = event.getDocument();
+        try {
+            var pathString = doc.getText(0, doc.getLength());
+            var fieldPath = Path.of(pathString);
+            var pathToParent = new ArrayList<Path>();
+            {
+                var p = fieldPath;
+                do {
+                    pathToParent.add(p);
+                    p = p.getParent();
+                } while (p != null);
+            }
+
+            BiFunction<TreeNode, Path, DirNode> findDirNodeForPathInParentNode = (node, path) -> {
+                if (node.nodes() != null) {
+                    for (var n : node.nodes()) {
+                        if (n instanceof DirNode) {
+                            var dirNode = (DirNode) n;
+                            if (path.equals(dirNode.path)) {
+                                return dirNode;
+                            }
+                        }
+                    }
+                }
+                return null;
+            };
+
+            var iterator = pathToParent.listIterator(pathToParent.size());
+            var nextNode = (TreeNode) rootNode;
+            while (iterator.hasPrevious()) {
+                nextNode = findDirNodeForPathInParentNode.apply(nextNode, iterator.previous());
+                if (nextNode != null) {
+                    System.out.println("Next node found: " + nextNode);
+                } else {
+                    System.out.println("Next node not found: " + nextNode);
+                    break;
+                }
+            }
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+            showErrorDialog("Error getting text from path field", e);
+        }
     }
 
     private class DirChooserTreeModel implements TreeModel {
@@ -339,6 +391,24 @@ public class DirectoryChooser extends JPanel {
         private DirNodesLoadResult(List<TreeNode> nodes, Object[] treePath) {
             this.nodes = nodes;
             this.treePath = treePath;
+        }
+    }
+
+    private class PathFieldDocumentListener implements DocumentListener {
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            pathFieldUpdated(e);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            pathFieldUpdated(e);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            pathFieldUpdated(e);
         }
     }
 }
