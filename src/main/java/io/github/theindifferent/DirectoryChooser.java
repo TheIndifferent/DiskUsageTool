@@ -204,9 +204,11 @@ public class DirectoryChooser extends JPanel {
                 return null;
             };
 
+            var treePath = new ArrayList<TreeNode>();
             var iterator = pathToParent.listIterator(pathToParent.size());
             var nextNode = (TreeNode) rootNode;
             while (iterator.hasPrevious()) {
+                treePath.add(nextNode);
                 nextNode = findDirNodeForPathInParentNode.apply(nextNode, iterator.previous());
                 if (nextNode != null) {
                     System.out.println("Next node found: " + nextNode);
