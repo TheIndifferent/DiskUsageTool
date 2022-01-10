@@ -41,6 +41,9 @@ class FileSystemAsyncReader {
 
     CompletionStage<TreeNode> loadNode(TreeNode node) {
         var futureNode = CompletableFuture.completedStage(node);
+        if (node.nodes() != null) {
+            return futureNode;
+        }
         var futureLoadedNode = futureNode
                 .thenApplyAsync(this::loadNodeBlocking, ioExecutor)
                 .thenApply(node::setNodes);
