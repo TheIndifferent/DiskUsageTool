@@ -2,9 +2,6 @@ package io.github.theindifferent;
 
 import io.github.theindifferent.dirchooser.DirectoryChooser;
 
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -37,27 +34,7 @@ public class App implements Runnable {
 
     private void chooseDirectoryToScan(Consumer<Path> dirConsumer) {
         var chooserPanel = new DirectoryChooser(dirConsumer);
-
-        var frame = new JFrame("Choose path to scan");
-        frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        frame.setContentPane(chooserPanel);
-        frame.pack();
-        var frameSize = frame.getSize();
-        int w = Math.max(frameSize.width, 400);
-        int h = Math.max(frameSize.height, 800);
-        frame.setSize(w, h);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-//        var folderChooser = new JFileChooser(System.getProperty("user.home"));
-//        folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//        folderChooser.setMultiSelectionEnabled(false);
-//        folderChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-//        folderChooser.setDialogTitle("Choose folder to scan disk usage");
-//        if (folderChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-//            dirConsumer.accept(folderChooser.getSelectedFile().toPath());
-//        } else {
-//            System.exit(0);
-//        }
+        chooserPanel.showChooserDialog("Choose path to scan");
     }
 
     private void checkPathAndShowMainWindow(Path path) {

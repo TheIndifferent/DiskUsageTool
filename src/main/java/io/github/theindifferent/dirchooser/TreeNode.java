@@ -30,7 +30,8 @@ class TreeNode {
     void setNodes(List<TreeNode> nodes) {
         this.nodes = nodes;
         if (!SwingUtilities.isEventDispatchThread()) {
-            new Exception().printStackTrace();
+            new Exception("List of nodes is set outside of Event Dispatch Thread")
+                    .printStackTrace();
         }
     }
 
