@@ -7,10 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 class FileSystemAsyncReader {
+
+    private final Executor ioExecutor = ForkJoinPool.commonPool();
+    private final Executor edtExecutor = SwingUtilities::invokeLater;
 
     private final FileSystemBlockingReader fileSystemBlockingReader = new FileSystemBlockingReader();
     private final Consumer<TreeModelEvent> treeModelEventConsumer;
@@ -25,35 +31,36 @@ class FileSystemAsyncReader {
     void loadRootNode(TreeNode rootNode) {
         var rootNodesFuture = CompletableFuture
                 .completedStage(rootNode)
-                .thenApplyAsync(fileSystemBlockingReader::readRootNodes);
+                .thenApplyAsync(fileSystemBlockingReader::readRootNodes, ioExecutor)
+                .thenApply(rootNode::setNodes);
         rootNodesFuture
-                .thenAcceptAsync(list -> list.forEach(this::loadNode));
+                .thenAcceptAsync(node -> node.nodes().forEach(this::loadNode), ioExecutor);
         rootNodesFuture
-                .thenAccept(nodes -> SwingUtilities.invokeLater(() -> updateRootNodeInEDT(rootNode, nodes)));
+                .thenAcceptAsync(this::updateRootNodeInEDT, edtExecutor);
     }
 
-    void loadNode(TreeNode node) {
+    CompletionStage<TreeNode> loadNode(TreeNode node) {
         var futureNode = CompletableFuture.completedStage(node);
-        var futureLoadedNode = futureNode.thenApplyAsync(this::loadNodeBlocking);
-        var futureNodePath = futureNode.thenApplyAsync(this::nodePath);
+        var futureLoadedNode = futureNode
+                .thenApplyAsync(this::loadNodeBlocking, ioExecutor)
+                .thenApply(node::setNodes);
+        var futureNodePath = futureNode
+                .thenApplyAsync(this::nodePath, ioExecutor);
         futureLoadedNode
-                .thenCombine(futureNodePath,
-                             (list, path) -> {
-                                 var event = new TreeModelEvent(this, path);
-                                 SwingUtilities.invokeLater(() -> {
-                                     node.setNodes(list);
-                                     treeModelEventConsumer.accept(event);
-                                 });
-                                 return null;
-                             })
-                .exceptionally(t -> {
-                    SwingUtilities.invokeLater(() -> errorConsumer.accept("Failed to list directories", t));
-                    return null;
-                });
+                .thenCombine(futureNodePath, (n, path) -> new TreeModelEvent(this, path))
+                .whenCompleteAsync(
+                        (r, t) -> {
+                            if (t != null) {
+                                errorConsumer.accept("Failed to list directories", t);
+                            } else {
+                                treeModelEventConsumer.accept(r);
+                            }
+                        },
+                        edtExecutor);
+        return futureLoadedNode;
     }
 
-    private void updateRootNodeInEDT(TreeNode rootNode, List<TreeNode> nodes) {
-        rootNode.setNodes(nodes);
+    private void updateRootNodeInEDT(TreeNode rootNode) {
         var event = new TreeModelEvent(this, new Object[]{rootNode});
         treeModelEventConsumer.accept(event);
         // TODO decide if this logic is useful:

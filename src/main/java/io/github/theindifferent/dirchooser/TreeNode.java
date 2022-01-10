@@ -1,6 +1,5 @@
 package io.github.theindifferent.dirchooser;
 
-import javax.swing.SwingUtilities;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -15,6 +14,15 @@ class TreeNode {
         this.parent = parent;
     }
 
+    /**
+     * It is possible to have race condition for the returned value
+     * as it can be read both in Event Dispatch Thread and in background
+     * worker threads.<br/>
+     * But the returned list is never modified after the list reference is set,
+     * which makes all usages of this race condition safe.
+     *
+     * @return list of child nodes, or {@code null} if the node has not been scanned yet.
+     */
     List<TreeNode> nodes() {
         return nodes;
     }
@@ -27,12 +35,9 @@ class TreeNode {
         return path;
     }
 
-    void setNodes(List<TreeNode> nodes) {
+    TreeNode setNodes(List<TreeNode> nodes) {
         this.nodes = nodes;
-        if (!SwingUtilities.isEventDispatchThread()) {
-            new Exception("List of nodes is set outside of Event Dispatch Thread")
-                    .printStackTrace();
-        }
+        return this;
     }
 
     @Override
