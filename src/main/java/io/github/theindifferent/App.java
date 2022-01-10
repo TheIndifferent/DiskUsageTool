@@ -1,5 +1,7 @@
 package io.github.theindifferent;
 
+import io.github.theindifferent.dirchooser.DirectoryChooser;
+
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -35,7 +37,6 @@ public class App implements Runnable {
 
     private void chooseDirectoryToScan(Consumer<Path> dirConsumer) {
         var chooserPanel = new DirectoryChooser(dirConsumer);
-        chooserPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
         var frame = new JFrame("Choose path to scan");
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
