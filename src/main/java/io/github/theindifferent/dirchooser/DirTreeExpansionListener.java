@@ -16,13 +16,13 @@ class DirTreeExpansionListener implements TreeExpansionListener {
         var path = event.getPath();
         var node = (TreeNode) path.getLastPathComponent();
         if (node.nodes() == null) {
-            fileSystemReader.loadNodeAsync(node);
+            fileSystemReader.loadNode(node);
             return;
         }
         node.nodes()
             .forEach(n -> {
                 if (n.nodes() == null) {
-                    fileSystemReader.loadNodeAsync(n);
+                    fileSystemReader.loadNode(n);
                 }
             });
     }

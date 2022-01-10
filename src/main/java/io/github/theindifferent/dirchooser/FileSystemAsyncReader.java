@@ -27,22 +27,12 @@ class FileSystemAsyncReader {
                 .completedStage(rootNode)
                 .thenApplyAsync(fileSystemBlockingReader::readRootNodes);
         rootNodesFuture
-                .thenAcceptAsync(list -> list.forEach(this::loadNodeAsync));
+                .thenAcceptAsync(list -> list.forEach(this::loadNode));
         rootNodesFuture
-                .thenAccept(nodes -> SwingUtilities.invokeLater(() -> updateRootNode(rootNode, nodes)));
+                .thenAccept(nodes -> SwingUtilities.invokeLater(() -> updateRootNodeInEDT(rootNode, nodes)));
     }
 
-    private void updateRootNode(TreeNode rootNode, List<TreeNode> nodes) {
-        rootNode.setNodes(nodes);
-        var event = new TreeModelEvent(this, new Object[]{rootNode});
-        treeModelEventConsumer.accept(event);
-        // TODO decide if this logic is useful:
-//        if (nodes.size() == 1) {
-//            SwingUtilities.invokeLater(() -> tree.expandRow(0));
-//        }
-    }
-
-    void loadNodeAsync(TreeNode node) {
+    void loadNode(TreeNode node) {
         var futureNode = CompletableFuture.completedStage(node);
         var futureLoadedNode = futureNode.thenApplyAsync(this::loadNodeBlocking);
         var futureNodePath = futureNode.thenApplyAsync(this::nodePath);
@@ -60,6 +50,16 @@ class FileSystemAsyncReader {
                     SwingUtilities.invokeLater(() -> errorConsumer.accept("Failed to list directories", t));
                     return null;
                 });
+    }
+
+    private void updateRootNodeInEDT(TreeNode rootNode, List<TreeNode> nodes) {
+        rootNode.setNodes(nodes);
+        var event = new TreeModelEvent(this, new Object[]{rootNode});
+        treeModelEventConsumer.accept(event);
+        // TODO decide if this logic is useful:
+//        if (nodes.size() == 1) {
+//            SwingUtilities.invokeLater(() -> tree.expandRow(0));
+//        }
     }
 
     private List<TreeNode> loadNodeBlocking(TreeNode node) {
