@@ -1,5 +1,6 @@
 package io.github.theindifferent.dirchooser;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -10,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -19,6 +21,7 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
@@ -148,6 +151,16 @@ public class DirectoryChooser extends JPanel {
         cancelButton.addActionListener(event -> dialog.dispose());
         dialog.setContentPane(this);
         dialog.getRootPane().setDefaultButton(getDefaultButton());
+
+        dialog.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+              .put(KeyStroke.getKeyStroke("ESCAPE"), "ESC");
+        dialog.getRootPane().getActionMap().put("ESC", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
+
         dialog.pack();
         var dialogSize = dialog.getSize();
         int w = Math.max(dialogSize.width, 550);
